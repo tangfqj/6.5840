@@ -1,2 +1,14 @@
+# ==== IDE ====
+.idea
+.vscode
+*.iml
+
+# ==== Go build artifacts ====
+*.exe
+*.so
+*.dll
+*.out
+*.test
+
 pkg/
 *-handin.tar.gz
