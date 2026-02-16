@@ -34,9 +34,15 @@ func (lk *Lock) Acquire() {
 	for {
 		val, ver, err := lk.ck.Get(lk.key)
 		if err == rpc.ErrNoKey {
-			err = lk.ck.Put(lk.key, lk.clientID, 0)
-			if err == rpc.OK {
+			e := lk.ck.Put(lk.key, lk.clientID, 0)
+			if e == rpc.OK {
 				return
+			}
+			if e == rpc.ErrMaybe {
+				v, _, e2 := lk.ck.Get(lk.key)
+				if e2 == rpc.OK && v == lk.clientID {
+					return
+				}
 			}
 			continue
 		}
@@ -49,6 +55,12 @@ func (lk *Lock) Acquire() {
 			e := lk.ck.Put(lk.key, lk.clientID, ver)
 			if e == rpc.OK {
 				return
+			}
+			if e == rpc.ErrMaybe {
+				v, _, e2 := lk.ck.Get(lk.key)
+				if e2 == rpc.OK && v == lk.clientID {
+					return
+				}
 			}
 		}
 		time.Sleep(5 * time.Millisecond)
@@ -67,6 +79,12 @@ func (lk *Lock) Release() {
 			e := lk.ck.Put(lk.key, "", ver)
 			if e == rpc.OK {
 				return
+			}
+			if e == rpc.ErrMaybe {
+				v, _, e2 := lk.ck.Get(lk.key)
+				if e2 == rpc.OK && v == lk.clientID {
+					return
+				}
 			}
 		} else {
 			return
