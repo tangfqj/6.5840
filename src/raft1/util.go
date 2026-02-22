@@ -47,3 +47,37 @@ func (rf *Raft) getLastLog() Entry {
 func (rf *Raft) getFirstLog() Entry {
 	return rf.logs[0]
 }
+
+func (rf *Raft) isLogMatch(index, term int) bool {
+	return index <= rf.getLastLog().CommandIndex && term == rf.logs[index-rf.getFirstLog().CommandIndex].CommandTerm
+}
+
+func (rf *Raft) isLogUpToDate(index, term int) bool {
+	lastLog := rf.getLastLog()
+	return term > lastLog.CommandTerm || (term == lastLog.CommandTerm && index >= lastLog.CommandIndex)
+}
+
+func shrinkEntries(entries []Entry) []Entry {
+	const lenMultiple = 2
+	if cap(entries) > len(entries)*lenMultiple {
+		newEntries := make([]Entry, len(entries))
+		copy(newEntries, entries)
+		return newEntries
+	}
+	return entries
+}
+
+func (rf *Raft) genAppendEntriesArgs(prevLogIndex int) *AppendEntriesArgs {
+	firstLogIndex := rf.getFirstLog().CommandIndex
+	entries := make([]Entry, len(rf.logs[prevLogIndex-firstLogIndex+1:]))
+	copy(entries, rf.logs[prevLogIndex-firstLogIndex+1:])
+	args := &AppendEntriesArgs{
+		Term:         rf.currentTerm,
+		LeaderId:     rf.me,
+		PrevLogIndex: prevLogIndex,
+		PrevLogTerm:  rf.logs[prevLogIndex-firstLogIndex].CommandTerm,
+		LeaderCommit: rf.commitIndex,
+		Entries:      entries,
+	}
+	return args
+}
