@@ -48,6 +48,10 @@ func (rf *Raft) getFirstLog() Entry {
 	return rf.logs[0]
 }
 
+func (rf *Raft) logIndex(absoluteIndex int) int {
+	return absoluteIndex - rf.getFirstLog().CommandIndex
+}
+
 func (rf *Raft) isLogMatch(index, term int) bool {
 	return index <= rf.getLastLog().CommandIndex && term == rf.logs[index-rf.getFirstLog().CommandIndex].CommandTerm
 }
